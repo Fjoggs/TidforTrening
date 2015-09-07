@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -14,9 +15,15 @@ import com.google.android.gms.common.Scopes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.request.SessionReadRequest;
 
+import java.sql.Time;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
-public class FitnessAPI extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_OAUTH = 1;
 
@@ -25,29 +32,32 @@ public class FitnessAPI extends AppCompatActivity {
      * a known auth error is being resolved, such as showing the account chooser or presenting a
      * consent dialog. This avoids common duplications as might happen on screen rotations, etc.
      */
-    private static final String AUTH_PENDING = "auth_state_pending";
-    private static final String TAG = "FitnessAPIFragment";
-    private boolean authInProgress = false;
 
+    private static final String AUTH_PENDING = "auth_state_pending";
+    private static final String TAG = "MainActivity";
+    private static final String SAMPLE_SESSION_NAME = "Sample Run";
+    private static final String DATE_FORMAT = "yyyy.MM.dd HH:mm:ss";
+
+    private boolean authInProgress = false;
     private GoogleApiClient mClient = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_fitness_api);
+        setContentView(R.layout.activity_main);
 
         if (savedInstanceState != null) {
             authInProgress = savedInstanceState.getBoolean(AUTH_PENDING);
         }
 
         buildFitnessClient();
+//        initiateHistory();
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_fitness_api, menu);
+        getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
@@ -61,6 +71,25 @@ public class FitnessAPI extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_readHistory) {
+            long startTimeTU = readFitnessSession().getStartTime(TimeUnit.MILLISECONDS);
+            String startTime = String.format("%d min, %d sec",
+                    TimeUnit.MILLISECONDS.toMinutes(startTimeTU),
+                    TimeUnit.MILLISECONDS.toSeconds(startTimeTU) -
+                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(startTimeTU))
+            );
+            long endTimeTU = readFitnessSession().getEndTime(TimeUnit.MILLISECONDS);
+            String endTime = String.format("%d min, %d sec",
+                    TimeUnit.MILLISECONDS.toMinutes(endTimeTU),
+                    TimeUnit.MILLISECONDS.toSeconds(endTimeTU) -
+                            TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(endTimeTU))
+            );
+
+            Toast.makeText(getApplicationContext(), readFitnessSession().getSessionName(), Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), startTime
+                    , Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), endTime
+                    , Toast.LENGTH_LONG).show();
         }
 
         return super.onOptionsItemSelected(item);
@@ -110,7 +139,7 @@ public class FitnessAPI extends AppCompatActivity {
                                 if (!result.hasResolution()) {
                                     // Show the localized error dialog
                                     GooglePlayServicesUtil.getErrorDialog(result.getErrorCode(),
-                                            FitnessAPI.this, 0).show();
+                                            MainActivity.this, 0).show();
                                     return;
                                 }
                                 // The failure has a resolution. Resolve it.
@@ -120,7 +149,7 @@ public class FitnessAPI extends AppCompatActivity {
                                     try {
                                         Log.i(TAG, "Attempting to resolve failed connection");
                                         authInProgress = true;
-                                        result.startResolutionForResult(FitnessAPI.this,
+                                        result.startResolutionForResult(MainActivity.this,
                                                 REQUEST_OAUTH);
                                     } catch (IntentSender.SendIntentException e) {
                                         Log.e(TAG,
@@ -131,6 +160,63 @@ public class FitnessAPI extends AppCompatActivity {
                         }
                 )
                 .build();
+    }
+
+//    private void initiateHistory() {
+//        // Setting a start and end date using a range of 1 week before this moment.
+//        Calendar cal = Calendar.getInstance();
+//        Date now = new Date();
+//        cal.setTime(now);
+//        long endTime = cal.getTimeInMillis();
+//        cal.add(Calendar.WEEK_OF_YEAR, -1);
+//        long startTime = cal.getTimeInMillis();
+//
+//        SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+//        Log.i(TAG, "Range Start: " + dateFormat.format(startTime));
+//        Log.i(TAG, "Range End: " + dateFormat.format(endTime));
+//
+//        DataReadRequest readRequest = new DataReadRequest.Builder()
+//                // The data request can specify multiple data types to return, effectively
+//                // combining multiple data queries into one call.
+//                // In this example, it's very unlikely that the request is for several hundred
+//                // datapoints each consisting of a few steps and a timestamp.  The more likely
+//                // scenario is wanting to see how many steps were walked per day, for 7 days.
+//                .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+//                        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
+//                        // bucketByTime allows for a time span, whereas bucketBySession would allow
+//                        // bucketing by "sessions", which would need to be defined in code.
+//                .bucketByTime(1, TimeUnit.DAYS)
+//                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+//                .build();
+//
+//        // Invoke the History API to fetch the data with the query and await the result of
+//        // the read request.
+//        DataReadResult dataReadResult =
+//                Fitness.HistoryApi.readData(mClient, readRequest).await(1, TimeUnit.MINUTES);
+//    }
+
+    /**
+     * Return a {@link SessionReadRequest} for all speed data in the past week.
+     */
+    private SessionReadRequest readFitnessSession() {
+        Log.i(TAG, "Reading History API results for session: " + SAMPLE_SESSION_NAME);
+        // [START build_read_session_request]
+        // Set a start and end time for our query, using a start time of 1 week before this moment.
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        long endTime = cal.getTimeInMillis();
+        cal.add(Calendar.WEEK_OF_YEAR, -1);
+        long startTime = cal.getTimeInMillis();
+
+        // Build a session read request
+        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+                .setTimeInterval(startTime, endTime, TimeUnit.MILLISECONDS)
+                .read(DataType.TYPE_SPEED)
+                .setSessionName(SAMPLE_SESSION_NAME)
+                .build();
+        // [END build_read_session_request]
+
+        return readRequest;
     }
 
     @Override
