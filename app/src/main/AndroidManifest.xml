@@ -34,6 +34,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".FitnessAPI"
+            android:label="@string/title_activity_fitness_api" >
+        </activity>
     </application>
 
 </manifest>
