@@ -60,3 +60,21 @@ dependencies {
     // Optional, needed for mocking
     androidTestCompile "com.google.dexmaker:dexmaker:1.2"
 }
+dependencies {
+    compile 'com.google.android.gms:play-services-ads:9.2.0'
+}
+dependencies {
+    compile 'com.google.android.gms:play-services-auth:9.2.0'
+}
+dependencies {
+    compile 'com.google.android.gms:play-services-gcm:9.2.0'
+}
+dependencies {
+    compile 'com.google.android.gms:play-services-ads:9.2.0'
+}
+dependencies {
+    compile 'com.google.android.gms:play-services-auth:9.2.0'
+}
+dependencies {
+    compile 'com.google.android.gms:play-services-gcm:9.2.0'
+}
