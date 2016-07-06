@@ -5,5 +5,12 @@
 
     <string name="button_start_tracking">Start Tracking!</string>
     <string name="button_stop_tracking">Stop Tracking</string>
-    <string name="button_reset_tracking">Reset Tracking</string>
+    <string name="button_store_activity">Store Activity</string>
+    <string name="button_delete_activity">Delete Activity</string>
+
+
+
+    <string name="permission_rationale">1 permission = 1 like</string>
+    <string name="permission_ok">Ok tho</string>
+    <string name="permission_denied_explanation">Accept permissions plz!</string>
 </resources>

@@ -216,8 +216,8 @@
     <orderEntry type="library" exported="" name="play-services-contextmanager-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="play-services-nearby-9.2.0" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="accessibility-test-framework-1.0" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="spock-android-1.2.1" level="project" />
     <orderEntry type="library" exported="" scope="TEST" name="ant-launcher-1.8.0" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="spock-android-1.2.1" level="project" />
     <orderEntry type="library" exported="" name="firebase-auth-module-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="play-services-plus-9.2.0" level="project" />
     <orderEntry type="library" exported="" name="firebase-storage-common-9.2.0" level="project" />

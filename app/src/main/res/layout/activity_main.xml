@@ -42,17 +42,26 @@
         android:layout_height="wrap_content"
         android:text="@string/button_stop_tracking"
         android:id="@+id/buttonStopTracking"
-        android:layout_above="@+id/buttonResetTracking"
+        android:layout_above="@+id/buttonStoreActivity"
         android:onClick="stopTracking"
         />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/button_reset_tracking"
-        android:id="@+id/buttonResetTracking"
+        android:text="@string/button_store_activity"
+        android:id="@+id/buttonStoreActivity"
+        android:layout_above="@+id/buttonDeleteActivity"
+        android:onClick="storeActivity"
+        />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/button_delete_activity"
+        android:id="@+id/buttonDeleteActivity"
         android:layout_alignParentBottom="true"
-        android:onClick="resetTracking"
+        android:onClick="deleteActivity"
         />
 
 
