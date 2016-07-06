@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">TidforTrening</string>
     <string name="title_activity_main">Tid for Trening</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+
+    <string name="button_start_tracking">Start Tracking!</string>
+    <string name="button_stop_tracking">Stop Tracking</string>
+    <string name="button_reset_tracking">Reset Tracking</string>
 </resources>
