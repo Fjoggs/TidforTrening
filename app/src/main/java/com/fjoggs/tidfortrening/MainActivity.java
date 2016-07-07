@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Chronometer;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.Scopes;
@@ -125,6 +126,10 @@ public class MainActivity extends AppCompatActivity {
         deleteSession();
     }
 
+    public void showAllActivites(View v) {
+        new ReadSessionDataFromPastWeek().execute();
+    }
+
 
     /**
      *  Build a {@link GoogleApiClient} that will authenticate the user and allow the application
@@ -180,6 +185,70 @@ public class MainActivity extends AppCompatActivity {
     private boolean checkPermissions() {
         int permissionState = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     *  Create and execute a {@link SessionInsertRequest} to insert a session into the History API,
+     *  and then create and execute a {@link SessionReadRequest} to verify the insertion succeeded.
+     *  By using an AsyncTask to make our calls, we can schedule synchronous calls, so that we can
+     *  query for sessions after confirming that our insert was successful. Using asynchronous calls
+     *  and callbacks would not guarantee that the insertion had concluded before the read request
+     *  was made. An example of an asynchronous call using a callback can be found in the example
+     *  on deleting sessions below.
+     */
+    private class InsertAndVerifySessionTask extends AsyncTask<Void, Void, Void> {
+        protected Void doInBackground(Void... params) {
+            //First, create a new session and an insertion request.
+            SessionInsertRequest insertRequest = insertFitnessSession();
+
+            // [START insert_session]
+            // Then, invoke the Sessions API to insert the session and await the result,
+            // which is possible here because of the AsyncTask. Always include a timeout when
+            // calling await() to avoid hanging that can occur from the service being shutdown
+            // because of low memory or other conditions.
+            Log.i(TAG, "Inserting the session in the History API");
+            com.google.android.gms.common.api.Status insertStatus =
+                    Fitness.SessionsApi.insertSession(googleApiClient, insertRequest)
+                            .await(1, TimeUnit.MINUTES);
+
+            // Before querying the session, check to see if the insertion succeeded.
+            if (!insertStatus.isSuccess()) {
+                Log.i(TAG, "There was a problem inserting the session: " +
+                        insertStatus.getStatusMessage());
+                return null;
+            }
+
+            // At this point, the session has been inserted and can be read.
+            Log.i(TAG, "Session insert was successful!");
+            // [END insert_session]
+
+            // Begin by creating the query.
+            SessionReadRequest readRequest = readFitnessSession();
+
+            // [START read_session]
+            // Invoke the Sessions API to fetch the session with the query and wait for the result
+            // of the read request. Note: Fitness.SessionsApi.readSession() requires the
+            // ACCESS_FINE_LOCATION permission.
+            SessionReadResult sessionReadResult =
+                    Fitness.SessionsApi.readSession(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
+
+            // Get a list of the sessions that match the criteria to check the result.
+            Log.i(TAG, "Session read was successful. Number of returned sessions is: "
+                    + sessionReadResult.getSessions().size());
+            for (Session session : sessionReadResult.getSessions()) {
+                // Process the session
+                dumpSession(session);
+
+                // Process the data sets for this session
+                List<DataSet> dataSets = sessionReadResult.getDataSet(session);
+                for (DataSet dataSet : dataSets) {
+                    dumpDataSet(dataSet);
+                }
+            }
+            // [END read_session]
+
+            return null;
+        }
     }
 
     /**
@@ -259,43 +328,19 @@ public class MainActivity extends AppCompatActivity {
         return insertRequest;
     }
 
-    /**
-     *  Create and execute a {@link SessionInsertRequest} to insert a session into the History API,
-     *  and then create and execute a {@link SessionReadRequest} to verify the insertion succeeded.
-     *  By using an AsyncTask to make our calls, we can schedule synchronous calls, so that we can
-     *  query for sessions after confirming that our insert was successful. Using asynchronous calls
-     *  and callbacks would not guarantee that the insertion had concluded before the read request
-     *  was made. An example of an asynchronous call using a callback can be found in the example
-     *  on deleting sessions below.
-     */
-    private class InsertAndVerifySessionTask extends AsyncTask<Void, Void, Void> {
+    private SessionReadRequest readFitnessSession() {
+        Log.i(TAG, "Reading History API results for session: " + SAMPLE_SESSION_NAME);
+        return new SessionReadRequest.Builder()
+                .setTimeInterval(startTrackingTime, stopTrackingTime, TimeUnit.MILLISECONDS)
+                .read(DataType.TYPE_SPEED)
+                .setSessionName(SAMPLE_SESSION_NAME)
+                .build();
+    }
+
+    private class ReadSessionDataFromPastWeek extends AsyncTask<Void, Void, Void> {
         protected Void doInBackground(Void... params) {
-            //First, create a new session and an insertion request.
-            SessionInsertRequest insertRequest = insertFitnessSession();
-
-            // [START insert_session]
-            // Then, invoke the Sessions API to insert the session and await the result,
-            // which is possible here because of the AsyncTask. Always include a timeout when
-            // calling await() to avoid hanging that can occur from the service being shutdown
-            // because of low memory or other conditions.
-            Log.i(TAG, "Inserting the session in the History API");
-            com.google.android.gms.common.api.Status insertStatus =
-                    Fitness.SessionsApi.insertSession(googleApiClient, insertRequest)
-                            .await(1, TimeUnit.MINUTES);
-
-            // Before querying the session, check to see if the insertion succeeded.
-            if (!insertStatus.isSuccess()) {
-                Log.i(TAG, "There was a problem inserting the session: " +
-                        insertStatus.getStatusMessage());
-                return null;
-            }
-
-            // At this point, the session has been inserted and can be read.
-            Log.i(TAG, "Session insert was successful!");
-            // [END insert_session]
-
             // Begin by creating the query.
-            SessionReadRequest readRequest = readFitnessSession();
+            SessionReadRequest readRequest = readFitnessSessionThisWeek();
 
             // [START read_session]
             // Invoke the Sessions API to fetch the session with the query and wait for the result
@@ -318,18 +363,8 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             // [END read_session]
-
             return null;
         }
-    }
-
-    private SessionReadRequest readFitnessSession() {
-        Log.i(TAG, "Reading History API results for session: " + SAMPLE_SESSION_NAME);
-        return new SessionReadRequest.Builder()
-                .setTimeInterval(startTrackingTime, stopTrackingTime, TimeUnit.MILLISECONDS)
-                .read(DataType.TYPE_SPEED)
-                .setSessionName(SAMPLE_SESSION_NAME)
-                .build();
     }
 
     /**
@@ -374,10 +409,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void dumpSession(Session session) {
         DateFormat dateFormat = DateFormat.getTimeInstance();
+        final String startTime = dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS));
+        final String endTime = dateFormat.format(session.getEndTime(TimeUnit.MILLISECONDS));
         Log.i(TAG, "Data returned for Session: " + session.getName()
                 + "\n\tDescription: " + session.getDescription()
-                + "\n\tStart: " + dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS))
-                + "\n\tEnd: " + dateFormat.format(session.getEndTime(TimeUnit.MILLISECONDS)));
+                + "\n\tStart: " + startTime
+                + "\n\tEnd: " + endTime);
+
+        TextView listSessions = (TextView) findViewById(R.id.activityList);
+        final String text = session.getName() + "\n" + session.getDescription() + "\n" + startTime + "\n" + endTime;
+        listSessions.setText(text);
     }
 
     /**
@@ -496,60 +537,5 @@ public class MainActivity extends AppCompatActivity {
                         }).show();
             }
         }
-    }
-
-
-    private void createSessionObject() {
-        session = new Session.Builder()
-                .setName(SAMPLE_SESSION_NAME)
-                .setIdentifier(SAMPLE_SESSION_ID)
-                .setDescription(SAMPLE_SESSION_DESC)
-                .setStartTime(SystemClock.elapsedRealtime(), TimeUnit.MILLISECONDS)
-                .setActivity(FitnessActivities.RUNNING)
-                .build();
-    }
-
-    private void startSession() {
-        PendingResult<Status> pendingResult = Fitness.SessionsApi.startSession(googleApiClient, session);
-        Log.i(TAG, "startSession: starting session");
-    }
-
-    private void stopSession() {
-        PendingResult<SessionStopResult> pendingResult =
-                Fitness.SessionsApi.stopSession(googleApiClient, session.getIdentifier());
-        Log.i(TAG, "stopSession: stopping session");
-    }
-
-    private void startSubscribingToFitnessData() {
-        Fitness.RecordingApi.subscribe(googleApiClient, DataType.TYPE_ACTIVITY_SAMPLE)
-                .setResultCallback(new ResultCallback<Status>() {
-                    @Override
-                    public void onResult(Status status) {
-                        if (status.isSuccess()) {
-                            if (status.getStatusCode()==FitnessStatusCodes.SUCCESS_ALREADY_SUBSCRIBED) {
-                                Log.i(TAG, "Existing subscription for activity detected.");
-                            } else {
-                                Log.i(TAG, "Successfully subscribed!");
-                            }
-                        } else {
-                            Log.i(TAG, "There was a problem subscribing.");
-                        }
-                    }
-                });
-    }
-
-    private void stopSubscribingToFitnessData() {
-        Fitness.RecordingApi.unsubscribe(googleApiClient, DataType.TYPE_ACTIVITY_SAMPLE)
-                .setResultCallback(new ResultCallback<Status>() {
-                    @Override
-                    public void onResult(Status status) {
-                        if (status.isSuccess()) {
-                            Log.i(TAG, "Successfully unsubscribed for data type: " + DataType.TYPE_ACTIVITY_SAMPLE.getName());
-                        } else {
-                            // Subscription not removed
-                            Log.i(TAG, "Failed to unsubscribe for data type: " + DataType.TYPE_ACTIVITY_SAMPLE.getName());
-                        }
-                    }
-                });
     }
 }
