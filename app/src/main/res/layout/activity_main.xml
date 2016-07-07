@@ -34,7 +34,7 @@
         android:text="@string/all_activites"
         android:layout_centerHorizontal="true"
         android:id="@+id/activityList"
-        android:layout_above="@id/buttonStartTracking"
+        android:layout_above="@+id/buttonStartTracking"
         android:layout_below="@id/stopWatch"
         android:textSize="@dimen/hello_world_size"
         />
@@ -44,7 +44,7 @@
         android:layout_height="wrap_content"
         android:text="@string/button_start_tracking"
         android:id="@+id/buttonStartTracking"
-        android:layout_above="@id/buttonStopTracking"
+        android:layout_above="@+id/buttonStopTracking"
         android:onClick="startTracking"
         />
 
@@ -53,7 +53,7 @@
         android:layout_height="wrap_content"
         android:text="@string/button_stop_tracking"
         android:id="@+id/buttonStopTracking"
-        android:layout_above="@id/buttonStoreActivity"
+        android:layout_above="@+id/buttonStoreActivity"
         android:onClick="stopTracking"
         />
 
@@ -62,7 +62,7 @@
         android:layout_height="wrap_content"
         android:text="@string/button_store_activity"
         android:id="@+id/buttonStoreActivity"
-        android:layout_above="@id/buttonDeleteActivity"
+        android:layout_above="@+id/buttonDeleteActivity"
         android:onClick="storeActivity"
         />
 
@@ -71,7 +71,7 @@
         android:layout_height="wrap_content"
         android:text="@string/button_delete_activity"
         android:id="@+id/buttonDeleteActivity"
-        android:layout_above="@id/buttonShowActivites"
+        android:layout_above="@+id/buttonShowActivities"
         android:onClick="deleteActivity"
         />
 
@@ -79,7 +79,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/button_show_activites"
-        android:id="@+id/buttonShowActivites"
+        android:id="@+id/buttonShowActivities"
         android:layout_alignParentBottom="true"
         android:onClick="showAllActivites"
         />
