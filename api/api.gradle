@@ -1,0 +1,16 @@
+description = 'TidForTrening API'
+
+apply plugin: 'war'
+apply plugin: 'org.springframework.boot'
+
+bootWar {
+    mainClassName = 'com.tidfortrening.api.ApiApplication'
+}
+
+
+dependencies {
+    compile (
+            "org.springframework.boot:spring-boot:2.1.4.RELEASE"
+    )
+}
+
